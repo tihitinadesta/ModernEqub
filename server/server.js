@@ -5,11 +5,12 @@ const { notFound, errorHandler } = require("./middlewares/errorMiddleware");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
   session({
@@ -22,6 +23,7 @@ app.use(
 dbConnection();
 
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Middleware for handling 404 errors (Not Found)
 app.use(notFound);
@@ -31,5 +33,5 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () =>
-  console.log(`Server started and listening on port ${PORT}`)
+  console.log(`Server started on http://localhost:${PORT}`)
 );

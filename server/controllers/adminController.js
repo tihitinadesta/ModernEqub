@@ -1,27 +1,29 @@
 const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 const generateToken = require("../utils/generateToken");
+const { generatePassword } = require("../utils/generatePassword");
 const authService = require("../services/authService");
 
-// @desc      Register user
-// @route     POST /api/auth/register
-// @access    Public
-exports.registerUser = asyncHandler(async (req, res, next) => {
-  const { fullName, username, phoneNumber, password } = req.body;
+// @desc      Register admin
+// @route     POST /api/admin/register
+// @access    Private
+exports.adminRegister = asyncHandler(async (req, res, next) => {
+  const { fullName, email } = req.body;
 
-  // Check if user already exists
-  let userExists = await User.findOne({ $or: [{ username }, { phoneNumber }] });
-
-  if (userExists) {
-    res.status(400);
-    throw new Error("User already exists");
+  // Check if the admin already exists
+  let adminExists = await User.findOne({ email });
+  if (adminExists) {
+    return res.status(400).json({ message: "Admin already exists" });
   }
+
+  const password = generatePassword(req.body.fullName);
 
   const user = await User.create({
     fullName,
-    username,
-    phoneNumber,
+    email,
     password,
+    role: "admin",
+    isAdmin: true,
   });
 
   if (user) {
@@ -30,8 +32,9 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
     res.status(201).json({
       _id: user._id,
       fullName: user.fullName,
-      username: user.username,
-      phoneNumber: user.phoneNumber,
+      email: user.email,
+      role: user.role,
+      isAdmin: user.isAdmin,
     });
   } else {
     res.status(400);
@@ -39,13 +42,13 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc       Login user
-//@route      POST /api/auth
+//@desc       Login admin
+//@route      POST /api/auth/login
 //@access     Public
-exports.loginUser = asyncHandler(async (req, res, next) => {
-  const { phoneNumber, password } = req.body;
+exports.loginAdmin = asyncHandler(async (req, res, next) => {
+  const { email, password } = req.body;
 
-  const user = await User.findOne({ phoneNumber });
+  const user = await User.findOne({ email });
 
   if (user && (await user.matchPassword(password))) {
     generateToken(res, user._id);
@@ -53,19 +56,52 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
     res.json({
       _id: user._id,
       fullName: user.fullName,
-      username: user.username,
-      phoneNumber: user.phoneNumber,
+      email: user.email,
     });
   } else {
     res.status(401);
-    throw new Error("Invalid phoneNumber or password");
+    throw new Error("Invalid email or password");
   }
 });
 
-// @desc       Logout user / clear cookie
-// @route      POST /api/auth/logout
+//@desc Get Amin profile
+//@route GET /api/admin/profile
+//@access Private
+exports.getAdminProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    res.json({
+      _id: user._id,
+      name: user.fullName,
+      email: user.email,
+      role: user.role,
+    });
+  } else {
+    res.status(404);
+    throw new Error("Admin not found");
+  }
+});
+
+// @desc      Update password
+// @route     PUT /api/admin/updatepassword
+// @access    Private
+exports.updatePassword = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.user._id).select("+password");
+
+  // Check current password
+  if (!(await user.matchPassword(req.body.currentPassword))) {
+    return next(new ErrorResponse("Password is incorrect", 401));
+  }
+
+  user.password = req.body.newPassword;
+  await user.save();
+});
+
+// @desc       Logout admin / clear cookie
+// @route      POST /api/admin/logout
 // @access     Private
-exports.logoutUser = asyncHandler(async (req, res) => {
+exports.logoutAdmin = asyncHandler(async (req, res) => {
   res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
@@ -74,16 +110,20 @@ exports.logoutUser = asyncHandler(async (req, res) => {
 });
 
 // @desc      Initiate forgot password process
-// @route     POST /api/auth/forgot-password
+// @route     POST /api/admin/forgot-password
 // @access    Private
 exports.forgotPassword = asyncHandler(async (req, res) => {
-  const { phoneNumber } = req.body;
-  await authService.initiateForgotPassword(phoneNumber, req.session);
+  const email = req.user.email;
+  const admin = await User.findOne({ email });
+  if (!admin) {
+    return res.status(404).json({ message: "Admin not found" });
+  }
+  await authService.initiateForgotPasswordEmail(email, req.session);
   res.status(200).json({ message: "OTP sent successfully" });
 });
 
 // @desc      Verify OTP
-// @route     POST /api/auth/verify-otp
+// @route     POST /api/admin/verify-otp
 // @access    Private
 exports.verifyOTP = asyncHandler(async (req, res) => {
   const { otp } = req.body;
@@ -110,7 +150,7 @@ exports.verifyOTP = asyncHandler(async (req, res) => {
 });
 
 // @desc      Reset password
-// @route     PUT /api/auth/resetpassword
+// @route     PUT /api/admin/resetpassword
 // @access    Private
 exports.resetPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne(req.user._id);
@@ -120,7 +160,7 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 });
 
 // @desc      Update password
-// @route     PUT /api/auth/change-password
+// @route     PUT /api/admin/change-password
 // @access    Private
 exports.updatePassword = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user.id).select("+password");

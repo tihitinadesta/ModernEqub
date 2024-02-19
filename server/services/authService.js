@@ -1,4 +1,6 @@
 const twilio = require("twilio");
+const { generateForgetPasswordEmail } = require("../utils/generatePassword");
+const sendEmail = require("../utils/sendEmail");
 
 // Create a Twilio client
 const client = twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
@@ -30,6 +32,19 @@ async function initiateForgotPassword(phoneNumber, session) {
   session.otpExpiryTime = otpExpiryTime;
 }
 
+async function initiateForgotPasswordEmail(email, session) {
+  const otp = generateForgetPasswordEmail();
+  const otpExpiryTime = Date.now() + 2 * 60 * 1000;
+  const text = `You are receiving this email because you (or someone else) has requested the reset of a password for your account. Please verify this OTP and procced with the steps: ${otp}`;
+  await sendEmail({
+    email,
+    subject: "Password reset otp",
+    text,
+  });
+  session.otp = otp;
+  session.otpExpiryTime = otpExpiryTime;
+}
+
 // Function to verify OTP
 function verifyOTP(otp, storedOTP) {
   return otp === storedOTP;
@@ -37,5 +52,6 @@ function verifyOTP(otp, storedOTP) {
 
 module.exports = {
   initiateForgotPassword,
+  initiateForgotPasswordEmail,
   verifyOTP,
 };
