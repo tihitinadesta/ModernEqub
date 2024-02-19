@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
+    email: {
+      type: String,
+      unique: true,
+    },
     phoneNumber: {
       type: String,
       unique: true,
@@ -17,6 +21,12 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
     },
+    role: {
+      type: String,
+      enum: ["user", "manager", "admin"],
+      default: "user",
+    },
+    isAdmin: { type: Boolean, default: false },
   },
   {
     timestamps: true,

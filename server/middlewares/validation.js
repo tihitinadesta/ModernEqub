@@ -29,6 +29,18 @@ const registrationValidation = [
     .withMessage("Password should have at least 8 characters long"),
 ];
 
+const adminRegistrationValidation = [
+  body("fullName")
+    .trim()
+    .notEmpty()
+    .isLength({ min: 4, max: 25 })
+    .withMessage("Full Name must be between 4 and 25 characters"),
+  body("email")
+    .normalizeEmail()
+    .isEmail()
+    .withMessage("Please provide a valid email address"),
+];
+
 const loginValidation = [
   body("phoneNumber")
     .trim()
@@ -64,5 +76,6 @@ module.exports = {
   registrationValidation,
   loginValidation,
   resetPasswordValidation,
+  adminRegistrationValidation,
   validate,
 };
