@@ -83,36 +83,10 @@ exports.getAdminProfile = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc      Update password
-// @route     PUT /api/admin/updatepassword
-// @access    Private
-exports.updatePassword = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user._id).select("+password");
-
-  // Check current password
-  if (!(await user.matchPassword(req.body.currentPassword))) {
-    return next(new ErrorResponse("Password is incorrect", 401));
-  }
-
-  user.password = req.body.newPassword;
-  await user.save();
-});
-
-// @desc       Logout admin / clear cookie
-// @route      POST /api/admin/logout
-// @access     Private
-exports.logoutAdmin = asyncHandler(async (req, res) => {
-  res.cookie("jwt", "", {
-    httpOnly: true,
-    expires: new Date(0),
-  });
-  res.status(200).json({ message: "Logged out Successfully." });
-});
-
 // @desc      Initiate forgot password process
 // @route     POST /api/admin/forgot-password
 // @access    Private
-exports.forgotPassword = asyncHandler(async (req, res) => {
+exports.adminForgotPassword = asyncHandler(async (req, res) => {
   const email = req.user.email;
   const admin = await User.findOne({ email });
   if (!admin) {
@@ -120,57 +94,4 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   }
   await authService.initiateForgotPasswordEmail(email, req.session);
   res.status(200).json({ message: "OTP sent successfully" });
-});
-
-// @desc      Verify OTP
-// @route     POST /api/admin/verify-otp
-// @access    Private
-exports.verifyOTP = asyncHandler(async (req, res) => {
-  const { otp } = req.body;
-  const storedOTP = req.session.otp;
-  const otpExpiryTime = req.session.otpExpiryTime;
-
-  // Check if OTP is expired
-  const currentTime = new Date();
-  if (otpExpiryTime && currentTime > otpExpiryTime) {
-    res.status(400).json({ error: "OTP has expired" });
-    return;
-  }
-
-  // Verify OTP
-  const isValid = authService.verifyOTP(otp, storedOTP);
-  if (isValid) {
-    // Clear OTP and OTP expiry time from session
-    delete req.session.otp;
-    delete req.session.otpExpiryTime;
-    res.status(200).json({ message: "OTP verified successfully" });
-  } else {
-    res.status(400).json({ error: "Invalid OTP" });
-  }
-});
-
-// @desc      Reset password
-// @route     PUT /api/admin/resetpassword
-// @access    Private
-exports.resetPassword = asyncHandler(async (req, res) => {
-  const user = await User.findOne(req.user._id);
-  user.password = req.body.password;
-  await user.save();
-  res.status(200).json({ message: "Password reset successfully" });
-});
-
-// @desc      Update password
-// @route     PUT /api/admin/change-password
-// @access    Private
-exports.updatePassword = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id).select("+password");
-
-  // Check current password
-  if (!(await user.matchPassword(req.body.currentPassword))) {
-    return res.status(401).json({ error: "Password is incorrect" });
-  }
-
-  user.password = req.body.newPassword;
-  await user.save();
-  res.status(200).json({ message: "Password updated successfully" });
 });

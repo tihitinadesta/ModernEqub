@@ -14,7 +14,7 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
 
   if (userExists) {
     res.status(400);
-    throw new Error("User already exists");
+    throw new Error("The Phone number or username belongs to another user");
   }
 
   const user = await User.create({
@@ -40,7 +40,7 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
 });
 
 //@desc       Login user
-//@route      POST /api/auth
+//@route      POST /api/auth/login
 //@access     Public
 exports.loginUser = asyncHandler(async (req, res, next) => {
   const { phoneNumber, password } = req.body;
@@ -63,9 +63,9 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
 });
 
 // @desc       Logout user / clear cookie
-// @route      POST /api/auth/logout
-// @access     Private
-exports.logoutUser = asyncHandler(async (req, res) => {
+// @route      POST /api/auth/logout || /api/admin/logout
+// @access     Private/Admin
+exports.logout = asyncHandler(async (req, res) => {
   res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
@@ -77,14 +77,14 @@ exports.logoutUser = asyncHandler(async (req, res) => {
 // @route     POST /api/auth/forgot-password
 // @access    Private
 exports.forgotPassword = asyncHandler(async (req, res) => {
-  const { phoneNumber } = req.body;
+  const phoneNumber = req.user.phoneNumber;
   await authService.initiateForgotPassword(phoneNumber, req.session);
   res.status(200).json({ message: "OTP sent successfully" });
 });
 
 // @desc      Verify OTP
-// @route     POST /api/auth/verify-otp
-// @access    Private
+// @route     POST /api/auth/verify-otp || /api/admin/verify-otp
+// @access    Private/Admin
 exports.verifyOTP = asyncHandler(async (req, res) => {
   const { otp } = req.body;
   const storedOTP = req.session.otp;
@@ -110,8 +110,8 @@ exports.verifyOTP = asyncHandler(async (req, res) => {
 });
 
 // @desc      Reset password
-// @route     PUT /api/auth/resetpassword
-// @access    Private
+// @route     PUT /api/auth/reset-password || /api/admin/reset-password
+// @access    Private/Admin
 exports.resetPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne(req.user._id);
   user.password = req.body.password;
@@ -120,8 +120,8 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 });
 
 // @desc      Update password
-// @route     PUT /api/auth/change-password
-// @access    Private
+// @route     PUT /api/auth/change-password || /api/admin/change-password
+// @access    Private/Admin
 exports.updatePassword = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user.id).select("+password");
 
