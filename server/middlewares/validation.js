@@ -41,20 +41,6 @@ const adminRegistrationValidation = [
     .withMessage("Please provide a valid email address"),
 ];
 
-const loginValidation = [
-  body("phoneNumber")
-    .trim()
-    .notEmpty()
-    .custom((value) => {
-      const isValidPhoneNumber = validatePhoneNumber.validate(value);
-      if (!isValidPhoneNumber) {
-        throw new Error("Please enter a valid phone number");
-      }
-      return true;
-    }),
-  body("password").trim().notEmpty(),
-];
-
 const resetPasswordValidation = [
   body("password")
     .trim()
@@ -74,7 +60,6 @@ const validate = (req, res, next) => {
 
 module.exports = {
   registrationValidation,
-  loginValidation,
   resetPasswordValidation,
   adminRegistrationValidation,
   validate,

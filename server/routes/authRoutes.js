@@ -2,7 +2,7 @@ const express = require("express");
 const {
   registerUser,
   loginUser,
-  logoutUser,
+  logout,
   forgotPassword,
   verifyOTP,
   updatePassword,
@@ -11,14 +11,13 @@ const {
 const { protect } = require("../middlewares/authMiddleware");
 const {
   registrationValidation,
-  loginValidation,
   resetPasswordValidation,
   validate,
 } = require("../middlewares/validation");
 const router = express.Router();
 
 router.post("/register", registrationValidation, validate, registerUser);
-router.post("/login", loginValidation, validate, loginUser);
+router.post("/login", loginUser);
 router.post("/forgot-password", protect, forgotPassword);
 router.post("/verify-otp", protect, verifyOTP);
 router.put("/change-password", protect, updatePassword);
@@ -29,6 +28,6 @@ router.put(
   validate,
   resetPassword
 );
-router.post("/logout", logoutUser);
+router.post("/logout", protect, logout);
 
 module.exports = router;
