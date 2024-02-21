@@ -64,25 +64,6 @@ exports.loginAdmin = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc Get Amin profile
-//@route GET /api/admin/profile
-//@access Private
-exports.getAdminProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
-
-  if (user) {
-    res.json({
-      _id: user._id,
-      name: user.fullName,
-      email: user.email,
-      role: user.role,
-    });
-  } else {
-    res.status(404);
-    throw new Error("Admin not found");
-  }
-});
-
 // @desc      Initiate forgot password process
 // @route     POST /api/admin/forgot-password
 // @access    Private

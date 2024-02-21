@@ -1,8 +1,8 @@
 const express = require("express");
+const router = express.Router();
 const {
   adminRegister,
   loginAdmin,
-  getAdminProfile,
   adminForgotPassword,
 } = require("../controllers/adminController");
 const {
@@ -17,11 +17,8 @@ const {
 } = require("../middlewares/validation");
 const { protect, admin } = require("../middlewares/authMiddleware");
 
-const router = express.Router();
-
 router.post("/register", adminRegistrationValidation, validate, adminRegister);
 router.post("/login", loginAdmin);
-router.get("/profile", protect, admin, getAdminProfile);
 router.post("/forgot-password", protect, admin, adminForgotPassword);
 router.post("/verify-otp", protect, admin, verifyOTP);
 router.put("/reset-password", protect, admin, resetPassword);
