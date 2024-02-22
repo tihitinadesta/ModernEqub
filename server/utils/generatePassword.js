@@ -8,8 +8,19 @@ const generatePassword = (name) => {
   return `${nameChars}${fixedNumber}`;
 };
 
+// Function to generate OTP password for email verification
 const generateForgetPasswordEmail = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-module.exports = { generateForgetPasswordEmail, generatePassword };
+// Function to generate a new equb code
+const generateEqubCode = () => {
+  const randomDigits = Math.floor(100000 + Math.random() * 900000);
+  return `E${randomDigits}`;
+};
+
+module.exports = {
+  generatePassword,
+  generateForgetPasswordEmail,
+  generateEqubCode,
+};

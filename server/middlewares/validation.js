@@ -49,6 +49,26 @@ const resetPasswordValidation = [
     .withMessage("Password should have at least 8 characters long"),
 ];
 
+const equbCreationValidation = [
+  body("equb_name").trim().notEmpty().withMessage("Equb name is required"),
+  body("number_of_participant")
+    .isInt({ min: 3, max: 50 })
+    .withMessage("Number of participants must be between 3 and 50"),
+  body("amount")
+    .isInt({ min: 500, max: 10000 })
+    .withMessage("Amount must be between 500 and 10,000"),
+  body("type")
+    .trim()
+    .notEmpty()
+    .withMessage("Type must be one of: daily, weekly, monthly"),
+  body("address").trim().notEmpty().withMessage("Address is required"),
+  body("starting_date")
+    .isAfter(
+      new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+    )
+    .withMessage("Starting date must be at least 3 days from today"),
+];
+
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -60,7 +80,8 @@ const validate = (req, res, next) => {
 
 module.exports = {
   registrationValidation,
-  resetPasswordValidation,
   adminRegistrationValidation,
+  resetPasswordValidation,
+  equbCreationValidation,
   validate,
 };
