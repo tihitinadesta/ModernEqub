@@ -69,6 +69,34 @@ exports.getEqub = asyncHandler(async (req, res, next) => {
   res.status(200).json(equb);
 });
 
+// @desc    Get Nearby Equbs in a specific area
+// @route   GET /api/equbs/nearby
+// @access  Public
+exports.getNearbyEqubs = asyncHandler(async (req, res) => {
+  const { latitude, longitude } = req.query;
+  const userCoordinates = [parseFloat(latitude), parseFloat(longitude)];
+
+  // Query nearby equbs using Mongoose's geospatial query
+  const nearbyEqubs = await Equb.find({
+    location: {
+      $near: {
+        $geometry: {
+          type: "Point",
+          coordinates: userCoordinates,
+        },
+        $maxDistance: 1000,
+      },
+    },
+  });
+  if (nearbyEqubs.length === 0) {
+    res
+      .status(404)
+      .json({ message: "No nearby equb found around your location" });
+  }
+
+  res.status(200).json(nearbyEqubs);
+});
+
 // @desc     Delete Equb
 // @route    DELETE /api/equbs/:id
 // @access   Private (User)
