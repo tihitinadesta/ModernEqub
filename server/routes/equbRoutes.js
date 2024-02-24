@@ -21,7 +21,7 @@ router
   .post(protect, equbCreationValidation, validate, createEqub)
   .get(protect, admin, getEqubs);
 router.get("/search", protect, getEqub);
-router.get("/nearby", protect, getNearbyEqubs);
+router.get("/:latitude/:longitude/nearby", protect, getNearbyEqubs);
 router.put("/:id/regenerate-code", protect, regenerateCode);
 router.post("/:id/authorize", protect, admin, authorizeEqub);
 router.route("/:id").put(protect, updateEqub).delete(protect, deleteEqub);
