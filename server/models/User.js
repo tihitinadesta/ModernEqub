@@ -29,7 +29,14 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "manager", "admin"],
       default: "user",
     },
-    isAdmin: { type: Boolean, default: false },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    createdEqub: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Equb",
+    },
   },
   {
     timestamps: true,
