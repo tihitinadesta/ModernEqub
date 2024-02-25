@@ -1,4 +1,5 @@
 const Equb = require("../models/Equb");
+const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 const { generateEqubCode } = require("../utils/generatePassword");
 
@@ -6,21 +7,48 @@ const { generateEqubCode } = require("../utils/generatePassword");
 // @route   POST /api/equbs
 // @access  Private (User)
 exports.createEqub = asyncHandler(async (req, res) => {
-  const equb = new Equb({
-    ...req.body,
-  });
+  req.body.createdBy = req.user._id;
 
-  await equb.save();
+  const existingEqub = await Equb.findOne({ createdBy: req.user._id });
+  if (existingEqub) {
+    return res
+      .status(401)
+      .json({ message: "The user already created an equb" });
+  }
+  const equb = await Equb.create(req.body);
+  await req.user.updateOne({ $push: { createdEqub: equb._id } });
   res.status(201).json(equb);
+});
+
+//@desc    Get equb the user owns
+//@rout    GET /api/equbs/my
+//@access  Private (User)
+exports.getMyEqub = asyncHandler(async (req, res) => {
+  const equb = await Equb.findOne({ createdBy: req.user._id });
+  if (!equb) {
+    return res.status(404).json({ error: "Equb not found" });
+  }
+
+  res.status(200).json(equb);
 });
 
 // @desc    Update Equb
 // @route   PUT /api/equbs/:id
-// @access  Private (Admin)
+// @access  Private
 exports.updateEqub = asyncHandler(async (req, res) => {
   let equb = await Equb.findById(req.params.id);
   if (!equb) {
     return res.status(404).json({ error: "Equb not found" });
+  }
+
+  const user = await User.findById(req.user._id);
+  if (
+    !user ||
+    (user.role !== "admin" && equb.createdBy.toString() !== req.user._id)
+  ) {
+    return res
+      .status(401)
+      .json({ error: "Not authorized to update this equb" });
   }
 
   equb = await Equb.findByIdAndUpdate(req.params.id, req.body, {
@@ -38,6 +66,11 @@ exports.regenerateCode = asyncHandler(async (req, res) => {
   const equb = await Equb.findById(req.params.id);
   if (!equb) {
     return res.status(404).json({ error: "Equb not found" });
+  }
+  if (equb.createdBy.toString() !== req.user._id) {
+    return res
+      .status(401)
+      .json({ error: "Not authorized to regenerate code for this equb" });
   }
   const newEqubCode = generateEqubCode();
 
@@ -71,7 +104,7 @@ exports.getEqub = asyncHandler(async (req, res, next) => {
 
 // @desc    Get Nearby Equbs in a specific area
 // @route   GET /api/equbs/:latitude/:longitude/nearby
-// @access  Public
+// @access  Private
 exports.getNearbyEqubs = asyncHandler(async (req, res) => {
   const { latitude, longitude } = req.params;
   const userCoordinates = [parseFloat(latitude), parseFloat(longitude)];
@@ -93,13 +126,22 @@ exports.getNearbyEqubs = asyncHandler(async (req, res) => {
 
 // @desc     Delete Equb
 // @route    DELETE /api/equbs/:id
-// @access   Private (User)
+// @access   Private
 exports.deleteEqub = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   let equb = await Equb.findById(id);
 
   if (!equb) {
     return res.status(404).json({ message: "Equb not found" });
+  }
+  const user = await User.findById(req.user._id);
+  if (
+    !user ||
+    (user.role !== "admin" && equb.createdBy.toString() !== req.user._id)
+  ) {
+    return res
+      .status(401)
+      .json({ error: "Not authorized to delete this equb" });
   }
   equb = await Equb.findOneAndDelete(id);
   res.status(200).json({ message: "Equb deleted successfully" });
@@ -110,11 +152,13 @@ exports.deleteEqub = asyncHandler(async (req, res, next) => {
 // @access   Private (Admin)
 exports.authorizeEqub = asyncHandler(async (req, res) => {
   const equb = await Equb.findById(req.params.id);
-  if (!equb) {
-    return res.status(404).json({ error: "Equb not found" });
-  }
-  equb.isAuthorized = true;
+  if (!equb) return res.status(404).json({ error: "Equb not found" });
 
-  await equb.save();
+  equb.isAuthorized = true;
+  await Promise.all([
+    equb.save(),
+    User.findByIdAndUpdate(equb.createdBy._id, { role: "manager" }),
+  ]);
+
   res.status(200).json(equb);
 });

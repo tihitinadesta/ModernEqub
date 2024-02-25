@@ -47,6 +47,10 @@ const equbSchema = new mongoose.Schema(
       type: String,
       default: "pending",
     },
+    createdBy: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+    },
     isAuthorized: {
       type: Boolean,
       default: false,
