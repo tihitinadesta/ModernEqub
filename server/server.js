@@ -1,4 +1,5 @@
 require("dotenv").config();
+const cors = require("cors");
 const express = require("express");
 const dbConnection = require("./database/connect");
 const { notFound, errorHandler } = require("./middlewares/errorMiddleware");
@@ -11,6 +12,7 @@ const equbRoutes = require("./routes/equbRoutes");
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

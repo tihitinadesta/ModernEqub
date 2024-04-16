@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Container, Typography, TextField, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { Container, TextField, Button } from "@mui/material";
+import { useAuth } from "../../context/auth/AuthContext";
+import { toast } from "react-toastify";
 
 const VerificationPage = () => {
-  const [verificationCode, setVerificationCode] = useState("");
-  const [isVerifying, setVerifying] = useState(false);
+  const [otp, setOtp] = useState("");
+  const navigate = useNavigate();
+  const { verifyOTP, isVerified, error, dispatch } = useAuth();
   const [resendTime, setResendTime] = useState(120);
 
   const handleResend = () => {
@@ -27,6 +31,30 @@ const VerificationPage = () => {
     return () => clearInterval(interval);
   }, [resendTime]);
 
+  const handleOTPVerification = async () => {
+    try {
+      await verifyOTP(otp);
+      navigate("/reset-password");
+    } catch (error) {
+      toast.error(error || "Something went wrong");
+      dispatch({ type: "CLEAR_ERROR" });
+    }
+  };
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error || "Something went wrong");
+      dispatch({ type: "CLEAR_ERROR" });
+    }
+  }, [error, dispatch]);
+
+  useEffect(() => {
+    if (isVerified) {
+      navigate("/reset-password");
+    }
+  }, [isVerified, navigate]);
+
+
   return (
     <Container
       sx={{
@@ -38,21 +66,21 @@ const VerificationPage = () => {
         background: "rgba(255, 255, 255, 0.9)",
       }}
     >
-      <Typography>
+      <>
         <h2 style={{ textAlign: "center" }}>Verification</h2>
         <p>You will get a verification OTP code via Email</p>
-      </Typography>
+      </>
       <TextField
         label="Enter Verification Code"
         variant="outlined"
         margin="normal"
         fullWidth
-        value={verificationCode}
+        value={otp}
         onChange={(e) => {
           const numericValue = e.target.value
             .replace(/[^0-9]/g, "")
             .slice(0, 6);
-          setVerificationCode(numericValue);
+             setOtp(numericValue);
         }}
       />
       <Button
@@ -65,7 +93,8 @@ const VerificationPage = () => {
           fontSize: "16px",
           fontWeight: "bold",
         }}
-        disabled={isVerifying || verificationCode.length !== 6}
+        onClick={handleOTPVerification}
+        disabled={isVerified || otp.length !== 6}
       >
         Verify OTP
       </Button>
@@ -80,8 +109,8 @@ const VerificationPage = () => {
               textTransform: "none",
               fontSize: "16px",
             }}
-            onClick={handleResend}
-            disabled={isVerifying}
+           onClick={handleResend}
+            disabled={isVerified}
           >
             Resend OTP
           </Button>

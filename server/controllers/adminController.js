@@ -68,7 +68,7 @@ exports.loginAdmin = asyncHandler(async (req, res, next) => {
 // @route     POST /api/admin/forgot-password
 // @access    Private
 exports.adminForgotPassword = asyncHandler(async (req, res) => {
-  const email = req.user.email;
+  const email = req.body.email;
   const admin = await User.findOne({ email });
   if (!admin) {
     return res.status(404).json({ message: "Admin not found" });

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   Box,
   Avatar,
@@ -12,19 +14,38 @@ import {
   InputAdornment,
   IconButton,
 } from "@mui/material";
+import { useAuth } from "../../context/auth/AuthContext";
+import { Link } from "react-router-dom";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
-import avatarImage from "../assets/user.png";
-import { Link } from "react-router-dom";
+import avatarImage from "../../assets/user.png";
 
 const LoginScreen = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { login, isAuthenticated, error, dispatch } = useAuth();
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
+
+  const handleLogin = () => {
+    login(email, password);
+  };
+  useEffect(() => {
+    if (error) {
+      toast.error(error || "Something went wrong");
+
+      dispatch({ type: "CLEAR_ERROR" });
+    }
+  }, [error, dispatch]);
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/home");
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <>
@@ -40,7 +61,7 @@ const LoginScreen = () => {
       >
         <div style={{ display: "flex", justifyContent: "center" }}>
           <Avatar
-            alt="Travis Howard"
+            alt=""
             src={avatarImage}
             sx={{ mb: 2, width: 100, height: 100 }}
           />
@@ -84,7 +105,7 @@ const LoginScreen = () => {
               }
               label="Enter your Password"
               size="normal"
-              sx={{ width: "30.5ch" }}
+              sx={{ width: "33.5ch" }}
               value={password}
               onChange={(event) => setPassword(event.target.value.trim())}
             />
@@ -92,7 +113,7 @@ const LoginScreen = () => {
         </Box>
         <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
           <Link
-            to="/verification"
+            to="/forget-password"
             style={{ textDecoration: "none", color: "#19524e" }}
           >
             <Typography
@@ -118,6 +139,7 @@ const LoginScreen = () => {
             fontSize: "16px",
             fontWeight: "bold",
           }}
+          onClick={handleLogin}
         >
           Login
         </Button>
